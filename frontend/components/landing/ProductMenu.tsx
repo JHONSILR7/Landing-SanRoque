@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axiosInst from "@/lib/axios";
+import { useCart } from "@/context/CartContext";
 
 interface Categoria {
   idCateProducto: string;
@@ -30,16 +31,13 @@ export default function ProductMenu() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [productoAgregado, setProductoAgregado] = useState<string | null>(null);
 
-  // Imágenes manuales temporales
-  const imagenesTemporales: { [key: number]: string } = {
-    0: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=300&fit=crop", // Galleta de bizcocho
-    1: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop", // Pastel de chocolate
-    2: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop", // Pan de pueblo
-    3: "https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?w=400&h=300&fit=crop", // Pastel de chuñu
-    4: "https://images.unsplash.com/photo-1557925923-cd4648e211a0?w=400&h=300&fit=crop", // Pastel de vainilla
-    5: "https://images.unsplash.com/photo-1621303837174-89787a7d4729?w=400&h=300&fit=crop", // Tres leches
-  };
+  // Usar el contexto del carrito
+  const { agregarAlCarrito } = useCart();
+
+  // Imagen por defecto si no hay imágenes
+  const IMAGEN_POR_DEFECTO = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop";
 
   useEffect(() => {
     cargarProductos();
@@ -64,19 +62,21 @@ export default function ProductMenu() {
       ? productos
       : productos.filter((p) => p.categoriaNombre === categoriaActiva);
 
-  const obtenerImagenProducto = (imagenes: string[], index: number) => {
-    // Primero intenta usar la imagen temporal según el índice
-    if (imagenesTemporales[index]) {
-      return imagenesTemporales[index];
-    }
-    
-    // Si hay imágenes en la BD, usa la primera
+  const obtenerImagenProducto = (imagenes: string[]) => {
     if (imagenes && imagenes.length > 0) {
       return imagenes[0];
     }
+    return IMAGEN_POR_DEFECTO;
+  };
+
+  const handleAgregarAlCarrito = (producto: Producto) => {
+    agregarAlCarrito(producto);
     
-    // Imagen por defecto
-    return "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop";
+    // Mostrar feedback visual
+    setProductoAgregado(producto.idProducto);
+    setTimeout(() => {
+      setProductoAgregado(null);
+    }, 1000);
   };
 
   if (cargando) {
@@ -138,7 +138,7 @@ export default function ProductMenu() {
           ))}
         </div>
 
-        {/* Grid de productos - columnas más delgadas */}
+        {/* Grid de productos */}
         <div className="row g-3 mb-4">
           {productosFiltrados.length === 0 ? (
             <div className="col-12 text-center py-4">
@@ -146,13 +146,13 @@ export default function ProductMenu() {
               <p className="text-muted mt-2" style={{ fontSize: '0.9rem' }}>No hay productos disponibles</p>
             </div>
           ) : (
-            productosFiltrados.map((prod, index) => (
+            productosFiltrados.map((prod) => (
               <div key={prod.idProducto} className="col-6 col-md-4 col-lg-3">
                 <div className="card product-card h-100">
                   {/* Imagen */}
                   <div className="position-relative overflow-hidden">
                     <img
-                      src={obtenerImagenProducto(prod.imagenes, index)}
+                      src={obtenerImagenProducto(prod.imagenes)}
                       alt={prod.nombre}
                       className="card-img-top"
                       style={{ height: '150px', objectFit: 'cover' }}
@@ -181,9 +181,13 @@ export default function ProductMenu() {
                       <h4 className="mb-0 fw-bold" style={{ color: '#d97706', fontSize: '1.3rem' }}>
                         S/ {prod.precio.toFixed(2)}
                       </h4>
-                      <button className="btn btn-primary-custom" style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>
-                        <i className="bi bi-cart-plus me-1"></i>
-                        Agregar
+                      <button 
+                        onClick={() => handleAgregarAlCarrito(prod)}
+                        className={`btn ${productoAgregado === prod.idProducto ? 'btn-success' : 'btn-primary-custom'}`}
+                        style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}
+                      >
+                        <i className={`bi ${productoAgregado === prod.idProducto ? 'bi-check-lg' : 'bi-cart-plus'} me-1`}></i>
+                        {productoAgregado === prod.idProducto ? '¡Agregado!' : 'Agregar'}
                       </button>
                     </div>
                   </div>

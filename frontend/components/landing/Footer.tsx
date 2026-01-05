@@ -30,8 +30,7 @@ export default function Footer() {
               <span className="fs-5 fw-bold" style={{ color: '#f3f4f6' }}>SAN ROQUE</span>
             </div>
             <p className="mb-3" style={{ color: '#9ca3af', fontSize: '0.85rem' }}>
-              La mejor cafetería y pastelería artesanal de Andahuaylas. Endulzando
-              vidas desde 2003.
+              La mejor cafetería y pastelería artesanal de Andahuaylas.
             </p>
             <div className="d-flex gap-2">
               <a href="#" className="social-icon" style={{
@@ -309,7 +308,7 @@ export default function Footer() {
           <div className="row align-items-center">
             <div className="col-md-6 text-center text-md-start mb-3 mb-md-0">
               <p className="mb-0" style={{ color: '#6b7280', fontSize: '0.8rem' }}>
-                © 2025 San Roque Cafetería y Pastelería. Todos los derechos reservados.
+                © 2026 San Roque Cafetería y Pastelería. Todos los derechos reservados.
               </p>
             </div>
             <div className="col-md-6 text-center text-md-end">

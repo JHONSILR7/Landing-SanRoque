@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     pagesBufferLength: 5,
   },
   turbopack: {},
+  webpack: (config, { isServer }) => {
+    return config;
+  },
 };
 
 export default nextConfig;

@@ -201,7 +201,6 @@ export default function Hero() {
 
             <p className="lead fs-5 text-secondary mb-4" style={{ maxWidth: '550px' }}>
               Disfruta de nuestros pasteles recién horneados y el mejor café de altura. 
-              <span className="fw-bold text-danger"> Más de 20 años endulzando tu vida.</span>
             </p>
 
             <div className="d-flex flex-wrap gap-3 mb-4">

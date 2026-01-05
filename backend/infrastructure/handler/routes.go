@@ -8,10 +8,15 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	authDom "sanRoque/domain/auth"
+	chatbotDom "sanRoque/domain/chatbot"
+	pedidoDom "sanRoque/domain/pedido"
 	prodDom "sanRoque/domain/producto"
 	authHand "sanRoque/infrastructure/handler/auth"
+	pedidoHand "sanRoque/infrastructure/handler/pedido"
 	prodHand "sanRoque/infrastructure/handler/producto"
+	chatbotHand "sanRoque/infrastructure/handler/chatbot"
 	"sanRoque/infrastructure/postgres"
+
 )
 
 func ConfigurarRutas(e *echo.Echo, db *sql.DB, cfg interface{}) {
@@ -41,6 +46,16 @@ func ConfigurarRutas(e *echo.Echo, db *sql.DB, cfg interface{}) {
 	prodUC := prodDom.NuevoProductoUC(prodRepo)
 	prodH := prodHand.NuevoProductoHandler(prodUC)
 
+	// Pedido
+	pedidoRepo := postgres.NuevoPedidoRepo(db)
+	pedidoUC := pedidoDom.NuevoPedidoUC(pedidoRepo)
+	pedidoH := pedidoHand.NuevoPedidoHandler(pedidoUC)
+
+	// ChatBot
+	chatbotRepo := postgres.NuevoChatBotRepo(db)
+	chatbotUC := chatbotDom.NuevoChatBotUC(chatbotRepo, cfgValue.FieldByName("GrokAPIKey").String())
+	chatbotH := chatbotHand.NuevoChatBotHandler(chatbotUC)
+
 	// Rutas
 	api := e.Group("/api")
 	
@@ -49,4 +64,10 @@ func ConfigurarRutas(e *echo.Echo, db *sql.DB, cfg interface{}) {
 
 	productos := api.Group("/productos")
 	prodHand.RegistrarRutas(productos, prodH)
+
+	pedidos := api.Group("/pedidos")
+	pedidoHand.RegistrarRutas(pedidos, pedidoH)
+
+	chatbot := api.Group("/chatbot")
+	chatbotHand.RegistrarRutas(chatbot, chatbotH)
 }

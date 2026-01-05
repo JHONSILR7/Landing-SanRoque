@@ -5,6 +5,7 @@ import (
     "encoding/json"
     "errors"
     "fmt"
+    "log"
     "net/http"
     "time"
 
@@ -28,21 +29,26 @@ func NuevoAuthUC(repo AuthRepo, googleId, jwtSecret string) AuthUC {
 
 // ValidarTokenGoogle valida un ID token de Google
 func (uc *authUC) ValidarTokenGoogle(ctx context.Context, idToken string) (*model.GoogleUsu, error) {
+    log.Printf("Validando token con googleId: %s", uc.googleId)
+    
     url := fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?id_token=%s", idToken)
 
     req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
     if err != nil {
+        log.Printf("Error creando request: %v", err)
         return nil, err
     }
 
     cli := &http.Client{Timeout: 10 * time.Second}
     resp, err := cli.Do(req)
     if err != nil {
+        log.Printf("Error validando con Google: %v", err)
         return nil, err
     }
     defer resp.Body.Close()
 
     if resp.StatusCode != http.StatusOK {
+        log.Printf("Google retornó status: %d", resp.StatusCode)
         return nil, errors.New("token de google inválido")
     }
 
@@ -54,17 +60,21 @@ func (uc *authUC) ValidarTokenGoogle(ctx context.Context, idToken string) (*mode
     }
 
     if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+        log.Printf("Error decodificando respuesta Google: %v", err)
         return nil, err
     }
 
+    log.Printf("Aud del token: %s, googleId configurado: %s", payload.Aud, uc.googleId)
+
     if payload.Aud != uc.googleId {
+        log.Printf("Mismatch de client_id: %s != %s", payload.Aud, uc.googleId)
         return nil, errors.New("client_id no coincide")
     }
 
     gUsu := &model.GoogleUsu{
         Email:  payload.Email,
         Nombre: payload.Name,
-        Sub:    payload.Sub, // ahora coincide con tu struct
+        Sub:    payload.Sub,
     }
 
     return gUsu, nil
