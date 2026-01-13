@@ -28,20 +28,22 @@ func (r *pedidoRepo) CrearPedido(ctx context.Context, req *model.CrearPedidoReq)
 	}
 	defer tx.Rollback()
 
-	// 1. Crear o buscar cliente
+	// 1. Crear o buscar cliente - ACTUALIZADO con email
 	var clienteId string
 	qCliente := `
-		INSERT INTO cliente (nombre, telefono, direccion)
-		VALUES ($1, $2, $3)
+		INSERT INTO cliente (nombre, telefono, direccion, email)
+		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (telefono) DO UPDATE SET
 			nombre = EXCLUDED.nombre,
-			direccion = EXCLUDED.direccion
+			direccion = EXCLUDED.direccion,
+			email = EXCLUDED.email
 		RETURNING "idCliente"
 	`
 	err = tx.QueryRowContext(ctx, qCliente, 
 		req.ClienteNombre, 
 		req.ClienteTelefono, 
 		req.ClienteDireccion,
+		req.ClienteEmail,
 	).Scan(&clienteId)
 	if err != nil {
 		return nil, fmt.Errorf("error al crear cliente: %w", err)
@@ -168,6 +170,7 @@ func (r *pedidoRepo) ObtenerPedidosPendientes(ctx context.Context) ([]*model.Ped
 			c.nombre as cliente_nombre,
 			c.telefono as cliente_telefono,
 			COALESCE(c.direccion, '') as cliente_direccion,
+			COALESCE(c.email, '') as cliente_email,
 			p.total,
 			p.estado,
 			COALESCE(p."comprobanteUrl", '') as comprobante_url,
@@ -212,6 +215,7 @@ func (r *pedidoRepo) ObtenerPedidosPendientes(ctx context.Context) ([]*model.Ped
 			&p.ClienteNombre,
 			&p.ClienteTelefono,
 			&p.ClienteDireccion,
+			&p.ClienteEmail,
 			&p.Total,
 			&p.Estado,
 			&p.ComprobanteURL,
@@ -222,7 +226,6 @@ func (r *pedidoRepo) ObtenerPedidosPendientes(ctx context.Context) ([]*model.Ped
 			return nil, err
 		}
 
-		// Parse productos JSON
 		if len(productosJSON) > 0 {
 			var productos []model.ProductoDetallePedido
 			if err := json.Unmarshal(productosJSON, &productos); err == nil {

@@ -20,31 +20,7 @@ type chatBotUC struct {
 	modelName string
 }
 
-func NuevoChatBotUC(repo ChatBotRepo, apiKey string) ChatBotUC {
-	// DEBUGGING: Verificar que la key llegue correctamente
-	log.Printf("=== INICIALIZANDO CHATBOT ===")
-	log.Printf("API Key recibida: %s", apiKey)
-	
-	if apiKey == "" {
-		log.Println("ADVERTENCIA: Grok API Key está VACÍA")
-		log.Println("Configura GROK_API_KEY en tu .env")
-		log.Fatal("No se puede iniciar el chatbot sin API key")
-	}
-	
-	if len(apiKey) < 10 {
-		log.Printf("ADVERTENCIA: API Key parece muy corta: %s", apiKey)
-	} else {
-		log.Printf("API Key cargada: %s...%s (longitud: %d)", 
-			apiKey[:10], 
-			apiKey[len(apiKey)-4:], 
-			len(apiKey))
-	}
-	
-	if apiKey[:4] != "xai-" {
-		log.Printf("ADVERTENCIA: La API key no empieza con 'xai-', empieza con: %s", apiKey[:4])
-		log.Println("Las keys de Grok deben empezar con 'xai-'")
-	}
-	
+func NuevoChatBotUC(repo ChatBotRepo, apiKey string) ChatBotUC {	
 	log.Printf("Chatbot inicializado correctamente")
 	
 	return &chatBotUC{

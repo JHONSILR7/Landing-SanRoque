@@ -9,7 +9,7 @@ import { estaAutenticado, obtenerUsuario } from "@/lib/auth";
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: (orderNumber: string) => void; // Nueva prop
+  onSuccess?: (orderNumber: string) => void;
 }
 
 export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutModalProps) {
@@ -18,6 +18,7 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
   const [nombre, setNombre] = useState("");
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
+  const [email, setEmail] = useState("");
   const [metodoPago, setMetodoPago] = useState("YAPE");
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [previewComprobante, setPreviewComprobante] = useState<string>("");
@@ -26,16 +27,15 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
   const [error, setError] = useState("");
   const [autenticado, setAutenticado] = useState(false);
   
-  // Verificar autenticación al abrir el modal
   useEffect(() => {
     if (isOpen) {
       const usuario = obtenerUsuario();
       const esAutenticado = estaAutenticado();
       setAutenticado(esAutenticado);
       
-      // Si está autenticado, pre-llenar el nombre
       if (esAutenticado && usuario && !nombre) {
         setNombre(usuario.nombre || "");
+        setEmail(usuario.email || "");
       }
     }
   }, [isOpen]);
@@ -58,23 +58,21 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
     setCargando(true);
 
     try {
-      // Validaciones
-      if (!nombre || !telefono) {
-        throw new Error("Nombre y teléfono son obligatorios");
+      if (!nombre || !telefono || !email) {
+        throw new Error("Nombre, teléfono y email son obligatorios");
       }
 
       if (!comprobante) {
         throw new Error("Debe subir el comprobante de pago");
       }
 
-      // 1. Subir comprobante a Cloudinary
       const comprobanteUrl = await subirImagenCloudinary(comprobante);
 
-      // 2. Preparar datos del pedido
       const pedidoData = {
         clienteNombre: nombre,
         clienteTelefono: telefono,
         clienteDireccion: direccion,
+        clienteEmail: email,
         productos: items.map((item) => ({
           productoId: item.idProducto,
           cantidad: item.cantidad,
@@ -84,22 +82,19 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
         metodoPago: metodoPago,
       };
 
-      // 3. Crear pedido
       const response = await axiosInst.post("/api/pedidos", pedidoData);
 
-      // 4. Éxito - Limpiar y notificar al padre
       const orderNumber = response.data.orden;
       vaciarCarrito();
       
-      // Notificar al componente padre sobre el éxito
       if (onSuccess) {
         onSuccess(orderNumber);
       }
       
-      // Limpiar formulario
       setNombre("");
       setTelefono("");
       setDireccion("");
+      setEmail("");
       setComprobante(null);
       setPreviewComprobante("");
 
@@ -112,7 +107,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
 
   if (!isOpen) return null;
 
-  // Si no está autenticado, mostrar modal de autenticación requerida
   if (!autenticado) {
     return (
       <div 
@@ -126,7 +120,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
         <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "400px" }}>
           <div className="modal-content border-0 shadow-lg" style={{ borderRadius: "14px", overflow: "hidden" }}>
             
-            {/* Header con advertencia */}
             <div className="modal-header border-0 pb-0" style={{ background: "linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)" }}>
               <div className="w-100 text-center position-relative">
                 <button
@@ -150,7 +143,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
               </div>
             </div>
 
-            {/* Body */}
             <div className="modal-body p-4 text-center">
               <div className="alert alert-info small mb-3" role="alert">
                 <i className="bi bi-info-circle me-2"></i>
@@ -162,7 +154,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
               </p>
             </div>
 
-            {/* Botones */}
             <div className="modal-footer border-top">
               <button
                 type="button"
@@ -172,6 +163,7 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                 <i className="bi bi-x-lg me-1"></i>
                 Cancelar
               </button>
+              
               <a
                 href="/login"
                 className="btn btn-primary btn-sm"
@@ -186,7 +178,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
     );
   }
 
-  // Modal de Checkout - Versión Compacta y Elegante
   return (
     <div 
       className="modal show d-block fade" 
@@ -196,10 +187,9 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
         zIndex: 1055
       }}
     >
-      <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: "500px" }}>
+      <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" style={{ maxWidth: "500px" }}>
         <div className="modal-content border-0 shadow-lg" style={{ borderRadius: "14px", overflow: "hidden" }}>
           
-          {/* Header elegante */}
           <div className="modal-header border-0 pb-0" style={{ background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)" }}>
             <div className="w-100 text-center position-relative">
               <button
@@ -224,10 +214,8 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
             </div>
           </div>
 
-          {/* Body compacto */}
           <div className="modal-body p-4">
             <form onSubmit={handleSubmit}>
-              {/* Contador de productos */}
               <div className="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
                 <span className="text-muted small">
                   <i className="bi bi-box-seam me-1"></i>
@@ -238,7 +226,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                 </span>
               </div>
 
-              {/* Datos del cliente */}
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-uppercase text-muted mb-2">
                   <i className="bi bi-person me-1"></i>
@@ -252,6 +239,17 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                       placeholder="Nombre completo *"
                       value={nombre}
                       onChange={(e) => setNombre(e.target.value)}
+                      required
+                      disabled={cargando}
+                    />
+                  </div>
+                  <div className="col-12">
+                    <input
+                      type="email"
+                      className="form-control form-control-sm"
+                      placeholder="Email *"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                       disabled={cargando}
                     />
@@ -280,7 +278,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                 </div>
               </div>
 
-              {/* Método de pago */}
               <div className="mb-3">
                 <label className="form-label small fw-semibold text-uppercase text-muted mb-2">
                   <i className="bi bi-credit-card me-1"></i>
@@ -300,7 +297,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                   ))}
                 </div>
 
-                {/* Información de pago */}
                 <div className="alert alert-light border small p-3 mb-3">
                   <p className="mb-2 fw-semibold small">
                     <i className="bi bi-info-circle me-1"></i>
@@ -323,7 +319,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                 </div>
               </div>
 
-              {/* Comprobante */}
               <div className="mb-4">
                 <label className="form-label small fw-semibold text-uppercase text-muted mb-2">
                   <i className="bi bi-cloud-arrow-up me-1"></i>
@@ -375,7 +370,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                 </div>
               </div>
 
-              {/* Error */}
               {error && (
                 <div className="alert alert-danger small py-2 mb-3" role="alert">
                   <i className="bi bi-exclamation-triangle me-2"></i>
@@ -383,7 +377,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
                 </div>
               )}
 
-              {/* Botones */}
               <div className="d-flex gap-2 pt-3 border-top">
                 <button
                   type="button"
@@ -415,7 +408,6 @@ export default function CheckoutModal({ isOpen, onClose, onSuccess }: CheckoutMo
             </form>
           </div>
 
-          {/* Footer con nota */}
           <div className="modal-footer border-0 pt-0">
             <p className="small text-center text-muted w-100 mb-0">
               <i className="bi bi-shield-check me-1"></i>
